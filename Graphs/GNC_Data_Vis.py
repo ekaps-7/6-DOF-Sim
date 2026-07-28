@@ -19,7 +19,7 @@ class GUI:
             listofDicts = list(dictReader)
         m_x_lst,m_y_lst,m_z_lst = [],[],[]
         t_x_lst,t_y_lst,t_z_lst = [],[],[]
-        for item in listofDicts:
+        for item in listofDicts[:-100]:
             m_x_lst.append(float(item['Mx']))
             m_y_lst.append(float(item['My']))
             m_z_lst.append(float(item['Mz']))
