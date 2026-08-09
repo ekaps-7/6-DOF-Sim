@@ -1,6 +1,7 @@
 /.vscode
 /build
 /target
+/Data
 /openGL/missile_sim_opengl.exe
 /GNC/linear.exe
 /GNC/Sim.exe
