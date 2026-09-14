@@ -642,7 +642,7 @@ class GuidanceProcessor: public Enviornment{
     private:
         Matrix3d Navigational_Constant_Matrix(){
             Matrix3d N_matrix;
-            N_matrix << 0, 0, 0,
+            N_matrix << N1_i, 0, 0,
                         0, N2_i, 0,
                         0, 0, N3_i;
             return N_matrix;
@@ -871,9 +871,11 @@ class Simulation: public Enviornment{
 
         Simulation() : rng(std::random_device{}()), nz(0.0, 1.0) {}
 
-        void run(Mode mode_,Fidelity fid_){
+        void run(const std::string& cfgfile){
             std::cout<<"Initializing Simulation\n"<<std::endl;
-            setState(mode_);
+            readConfig(cfgfile);
+            std::cout<<"Reading Config File\n"<<std::endl;
+            setState();
             std::cout<<"State set\n"<<std::endl;
     
             CSV_Writer csv("C:\\Software Development\\6 DOF Sim\\Data\\GNC_Data2.csv");
@@ -941,13 +943,13 @@ class Simulation: public Enviornment{
                 Vector3d body_rot_vec = missile.body_rot_vec;
 
                 std::tie(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,ekfdata,tekfdata) = missile.SENSORS(missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,target_vel_vec,target_acc_vec,ekf,step,rng,nz,tekf,body_rot_vec);
-                std::tie(R,acc_vec,euler_angles,quat_vec,executed_body_a_vec,body_rot_vec) = missile.INTELLIGENT_INTEGRATED_GUIDANCE_NAVIGATION_AND_CONTROL_SYSTEM(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,body_rot_vec,fid_);
+                std::tie(R,acc_vec,euler_angles,quat_vec,executed_body_a_vec,body_rot_vec) = missile.INTELLIGENT_INTEGRATED_GUIDANCE_NAVIGATION_AND_CONTROL_SYSTEM(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,body_rot_vec,fid);
                 std::tie(thrust,fuel_mass,defl_angls,aero_forces,aero_moments,new_p,new_v,new_omega,aerodata) = missile.AIRFRAME(missile_pos_vec,missile_vel_vec,executed_body_a_vec,quat_vec,body_rot_vec,tables);
                 
-                if (fid_ == TRIM){
+                if (fid == TRIM){
                     std::tie(missile.m_ax,missile.m_ay,missile.m_az,missile.m_vx,missile.m_vy,missile.m_vz,missile.m_x,missile.m_y,missile.m_z) = missile.update_params(acc_vec,delta_t);
                 }
-                else if (fid_ == FULL_BODY){
+                else if (fid == FULL_BODY){
                     missile.m_x = new_p.x();
                     missile.m_y = new_p.y();
                     missile.m_z = new_p.z();
@@ -1014,7 +1016,7 @@ class Simulation: public Enviornment{
             csv.write_line("miss");
 
             for (int i = 0; i < n; ++i){
-                setState(mode_);
+                setState();
 
                 Missile missile(i_mx,i_my,i_mz,i_mvx,i_mvy,i_mvz,i_max,i_may,i_maz,i_roll,i_pitch,i_yaw);
                 Target target(i_tx,i_ty,i_tz,i_tvx,i_tvy,i_tvz,i_tax,i_tay,i_taz);
@@ -1052,13 +1054,13 @@ class Simulation: public Enviornment{
                     Vector3d body_rot_vec = missile.body_rot_vec;
 
                     std::tie(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,ekfdata,tekfdata) = missile.SENSORS(missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,target_vel_vec,target_acc_vec,ekf,step,rng,nz,tekf,body_rot_vec);
-                    std::tie(R,acc_vec,euler_angles,quat_vec,executed_body_a_vec,body_rot_vec) = missile.INTELLIGENT_INTEGRATED_GUIDANCE_NAVIGATION_AND_CONTROL_SYSTEM(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,body_rot_vec,fid_);
+                    std::tie(R,acc_vec,euler_angles,quat_vec,executed_body_a_vec,body_rot_vec) = missile.INTELLIGENT_INTEGRATED_GUIDANCE_NAVIGATION_AND_CONTROL_SYSTEM(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,body_rot_vec,fid);
                     std::tie(thrust,fuel_mass,defl_angls,aero_forces,aero_moments,new_p,new_v,new_omega,aerodata) = missile.AIRFRAME(missile_pos_vec,missile_vel_vec,executed_body_a_vec,quat_vec,body_rot_vec,tables);
 
-                    if (fid_ == TRIM){
+                    if (fid == TRIM){
                         std::tie(missile.m_ax,missile.m_ay,missile.m_az,missile.m_vx,missile.m_vy,missile.m_vz,missile.m_x,missile.m_y,missile.m_z) = missile.update_params(acc_vec,delta_t);
                     }
-                    else if (fid_ == FULL_BODY){
+                    else if (fid == FULL_BODY){
                         missile.m_x = new_p.x();
                         missile.m_y = new_p.y();
                         missile.m_z = new_p.z();

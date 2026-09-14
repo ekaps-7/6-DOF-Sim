@@ -26,6 +26,7 @@ class StateModel{
         };
 
         Mode mode;
+        Fidelity fid;
 
         Matrix3d Rfb;
         Vector3d rel_pos_vec;
@@ -59,6 +60,7 @@ class StateModel{
         double delta_t = .001; // s
         int steps = 100000;
         // Navigational constants
+        double N1_i = 0;  // no unit
         double N2_i = 3;  // no unit
         double N3_i = 3;  // no unit
         // Longitudinal and lateral autopilot time-constants
@@ -78,7 +80,7 @@ class StateModel{
         double temp_lapse_rate = .0065; // K/m
         double temp_sea_lvl = 288.15; // K
         double thermal_expansion_coefficient = .0008; // 1/K
-        double g = 0; // m/s^2
+        double g = -9.81; // m/s^2
         double pi = 3.14159;
         double air_molar_mass = .0289644; // kg/mol
         double gas_constant = 8.31432;  // J/mol*K
@@ -97,7 +99,7 @@ class StateModel{
         // Fin actuator parameters
         double fin_base = .4;  // m 
         double fin_height = .1; // m
-        double fin_area = .5*.4*.1; // m^2
+        double fin_area = .5*fin_base*fin_height; // m^2
         double front_fin_d = .05; // m
         double fin_mass = .3; // kg
         double max_ang = .436; // rad
@@ -169,8 +171,7 @@ class StateModel{
 
         StateModel() {}
 
-        void setState(Mode mode_){
-            mode = mode_;
+        void setState(){
             switch (mode){
                 case Mode::LR_HS_HEAD_ON_ACC_DIVE:
                     innit_LR_HS_HEAD_ON_ACC_DIVE();
@@ -190,6 +191,288 @@ class StateModel{
                 default:
                     std::cout << "Unknown State\n";
                     break;
+            }
+        }
+
+        void readConfig(const std::string& cfgfile){
+            std::ifstream file(cfgfile);
+
+            if (!file)
+            {
+                throw std::runtime_error("Could not open config file: " + cfgfile);
+            }
+
+            std::string heading;
+            std::string value;
+
+            while (std::getline(file, heading))
+            {
+                if (!std::getline(file, value))
+                {
+                    throw std::runtime_error(
+                        "Missing value for setting: " + heading
+                    );
+                }
+
+                else if (heading == "FIDELITY")
+                {
+                    if (value == "trim") fid = TRIM;
+                    if (value == "full_body") fid = FULL_BODY;
+                }
+
+                else if (heading == "ENGAGEMENT TYPE")
+                {
+                    if (value == "lr_hs_head_on_acc_dive") mode = LR_HS_HEAD_ON_ACC_DIVE;
+                    if (value == "lr_hs_head_on") mode = LR_HS_HEAD_ON;
+                    if (value == "sr_hs_tail_chase") mode = SR_HS_TAIL_CHASE;
+                    if (value == "sr_hs_lateral_crossing") mode = SR_HS_LATERAL_CROSSING;
+                    if (value == "lr_hs_lateral_crossing") mode = LR_HS_LATERAL_CROSSING;
+                }
+
+                else if (heading == "TIME STEP")
+                {
+                    delta_t = std::stod(value);
+                }
+
+                else if (heading == "MAX STEPS")
+                {
+                    steps = std::stod(value);
+                }
+
+                else if (heading == "X NAVIGATIONAL CONSTANT")
+                {
+                    N1_i = std::stod(value);
+                }
+
+                else if (heading == "Y NAVIGATIONAL CONSTANT")
+                {
+                    N2_i = std::stod(value);
+                }
+
+                else if (heading == "Z NAVIGATIONAL CONSTANT")
+                {
+                    N3_i = std::stod(value);
+                }
+
+                else if (heading == "X LONGITUDINAL AUTOPILOT TIME CONSTANT")
+                {
+                    taox_i = std::stod(value);
+                }
+
+                else if (heading == "Y LATERAL AUTOPILOT TIME CONSTANT")
+                {
+                    taoy_i = std::stod(value);
+                }
+
+                else if (heading == "Z LATERAL AUTOPILOT TIME CONSTANT")
+                {
+                    taoz_i = std::stod(value);
+                }
+
+                else if (heading == "LATITUDE")
+                {
+                    latitude = std::stod(value);
+                }
+
+                else if (heading == "LONGITUDE")
+                {
+                    longitude = std::stod(value);
+                }
+
+                else if (heading == "SEA LEVEL AIR PRESSURE")
+                {
+                    air_pressure_sea_lvl = std::stod(value);
+                }
+
+                else if (heading == "AIR VISCOCITY")
+                {
+                    air_viscocity = std::stod(value);
+                }
+
+                else if (heading == "TEMPERATURE LAPSE RATE")
+                {
+                    temp_lapse_rate = std::stod(value);
+                }
+
+                else if (heading == "SEA LEVEL TEMPERATURE")
+                {
+                    temp_sea_lvl = std::stod(value);
+                }
+
+                else if (heading == "THERMAL EXPANSION COEFFICIENT")
+                {
+                    thermal_expansion_coefficient = std::stod(value);
+                }
+
+                else if (heading == "GRAVITY")
+                {
+                    g = std::stod(value);
+                }
+
+                else if (heading == "MOLAR MASS OF AIR")
+                {
+                    air_molar_mass = std::stod(value);
+                }
+
+                else if (heading == "GAS CONSTANT")
+                {
+                    gas_constant = std::stod(value);
+                }
+
+                else if (heading == "DRY AIR CONSTANT")
+                {
+                    dry_air_constant = std::stod(value);
+                }
+
+                else if (heading == "SPEED OF SOUND")
+                {
+                    speed_of_sound = std::stod(value);
+                }
+
+                else if (heading == "BODY LENGTH")
+                {
+                    body_length = std::stod(value);
+                }
+
+                else if (heading == "BODY RADIUS")
+                {
+                    body_radius = std::stod(value);
+                }
+
+                else if (heading == "BODY MASS")
+                {
+                    body_mass = std::stod(value);
+                }
+
+                else if (heading == "NOSE MASS")
+                {
+                    nose_mass = std::stod(value);
+                }
+
+                else if (heading == "PAYLOAD MASS")
+                {
+                    payload_mass = std::stod(value);
+                }
+
+                else if (heading == "TOTAL MASS")
+                {
+                    total_mass = std::stod(value);
+                }
+
+                else if (heading == "BODY CENTER OF MASS LOCATION")
+                {
+                    body_cm = std::stod(value);
+                }
+
+                else if (heading == "PAYLOAD CENTER OF MASS LOCATION")
+                {
+                    payload_cm = std::stod(value);
+                }
+
+                else if (heading == "FIN BASE LENGTH")
+                {
+                    fin_base = std::stod(value);
+                }
+
+                else if (heading == "FIN HEIGHT")
+                {
+                    fin_height = std::stod(value);
+                }
+
+                else if (heading == "FRONT FIN DISTANCE")
+                {
+                    front_fin_d = std::stod(value);
+                }
+
+                else if (heading == "FIN MASS")
+                {
+                    fin_mass = std::stod(value);
+                }
+
+                else if (heading == "MAX FIN ANGLE")
+                {
+                    max_ang = std::stod(value);
+                }
+
+                else if (heading == "MAX ACTUATOR TORQUE")
+                {
+                    max_torque = std::stod(value);
+                }
+
+                else if (heading == "ACTUATOR DAMPING")
+                {
+                    act_damping = std::stod(value);
+                }
+
+                else if (heading == "ACTUATOR TIME CONSTANT")
+                {
+                    act_tao = std::stod(value);
+                }
+
+                else if (heading == "KP")
+                {
+                    Kp = std::stod(value);
+                }
+
+                else if (heading == "KD")
+                {
+                    Kd = std::stod(value);
+                }
+
+                else if (heading == "FIN COEFFICIENT")
+                {
+                    C_f = std::stod(value);
+                }
+
+                else if (heading == "COEFFICIENT OF LIFT FROM FIN DEFLECTION")
+                {
+                    C_Lf_delta = std::stod(value);
+                }
+
+                else if (heading == "HINGE MOMENT COEFFICIENT")
+                {
+                    C_H = std::stod(value);
+                }
+
+                else if (heading == "FUEL TANK LENGTH")
+                {
+                    fuel_tank_length = std::stod(value);
+                }
+
+                else if (heading == "FUEL TANK RADIUS")
+                {
+                    fuel_tank_radius = std::stod(value);
+                }
+
+                else if (heading == "INITIAL FUEL MASS")
+                {
+                    initial_fuel_mass = std::stod(value);
+                }
+
+                else if (heading == "FUEL MASS")
+                {
+                    fuel_mass = std::stod(value);
+                }
+
+                else if (heading == "FUEL DENSITY")
+                {
+                    fuel_density = std::stod(value);
+                }
+
+                else if (heading == "FUEL VELOCITY")
+                {
+                    fuel_v = std::stod(value);
+                }
+
+                else if (heading == "EXHAUST VELOCITY")
+                {
+                    exhaust_v = std::stod(value);
+                }
+
+                else if (heading == "JET CROSS SECTIONAL AREA")
+                {
+                    cs_area = std::stod(value);
+                }
             }
         }
 

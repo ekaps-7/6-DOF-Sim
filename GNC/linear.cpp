@@ -1300,16 +1300,16 @@ int main(){
     TrimConditions c;
     c.mach = 2;
     c.altitude = 3000;
-    c.gamma = 15.0*d2r;
+    c.gamma = 0.0*d2r;
     //c.phi = 0.0*d2r;
     c.alpha_command = 0.0*d2r;
     c.beta_command = 0.0*d2r;
-    c.turn_rate = 2.0*(1/57.3);
+    c.turn_rate =0.0*(1/57.3);
     c.fix_alpha = false;
     c.fix_beta = false;
 
     TrimEngine solver(tables);
-    TrimMode mode = TrimMode::COORDINATED_TURN;
+    TrimMode mode = TrimMode::LEVEL;
 
     auto res = solver.Solve(c, mode);
 
