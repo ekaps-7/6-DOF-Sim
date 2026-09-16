@@ -169,6 +169,18 @@ class GUI:
             Cn_lst.append(float(item['Cn']))
         Aero_moment_coefficiets(time_lst,Cl_lst,Cm_lst,Cn_lst)
 
+    def collision_graphs(self):
+        with open("C:\\Software Development\\6 DOF SIM\\Data\\Collision_Course_data.csv") as csvFile:
+            dictReader = csv.DictReader(csvFile)
+            listofDicts = list(dictReader)
+        time_lst,tgo_lst,thetacc_lst,psicc_lst = [],[],[],[]
+        for item in listofDicts[:-1000]:
+            time_lst.append(float(item['time']))
+            tgo_lst.append(float(item['tgo']))
+            thetacc_lst.append(float(item['thetacc']))
+            psicc_lst.append(float(item['psicc']))
+        Collision_course_geometry(time_lst,tgo_lst,thetacc_lst,psicc_lst)
+    
     def create_GUI(self):
         root = Tk()
         frame = Frame(root)
@@ -241,6 +253,11 @@ class GUI:
         momentcoe_label.grid(row=13,column=0)
         momentcoe_button = Button(frame,text="Show Graphs",width=14,command=self.aero_moment_coeff_graphs)
         momentcoe_button.grid(row=13,column=1)
+
+        col_label = Label(frame,text="Collision Geo.")
+        col_label.grid(row=14,column=0)
+        col_button = Button(frame,text="Show Graphs",width=14,command=self.collision_graphs)
+        col_button.grid(row=14,column=1)
 
         root.mainloop()
 
@@ -696,6 +713,26 @@ def SPSA_graph(iter_lst,cost_lst,t0,t1,t2):
     plt.legend([line1,line2,line3],["Theta 0","Theta 1","Theta 2"])
     plt.show()
 
+def Collision_course_geometry(time_lst,tgo_lst,thetacc_lst,psicc_lst):
+    time_arr = np.array(time_lst)
+    tgo_arr = np.array(tgo_lst)
+    thetacc_arr = np.array(thetacc_lst)
+    psicc_arr = np.array(psicc_lst)
+    fig = plt.figure()
+    ax1 = plt.subplot(311)
+    ax1.set_title("Collision Course Geometry")
+    line1, = plt.plot(time_arr,tgo_arr)
+    plt.ylabel("T_go (s)")
+    plt.tick_params('x',labelbottom=False)
+    ax2 = plt.subplot(312)
+    line2, = plt.plot(time_arr,thetacc_arr)
+    plt.ylabel("Theta_cc_mt (deg)")
+    plt.tick_params('x',labelbottom=False)
+    ax3 = plt.subplot(313)
+    line1, = plt.plot(time_arr,psicc_arr)
+    plt.ylabel("Psi_cc_my (deg)")
+    plt.xlabel("Time (s)")
+    plt.show()
 
 #engagement_simulation()
 

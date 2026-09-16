@@ -47,6 +47,9 @@ class StateModel{
         double thrust;
         double alpha;
         double beta;
+        double T_go;
+        double theta_cc_mt;
+        double psi_cc_mt;
         Vector3d aero_forces;
         Vector3d aero_moments;
         Vector3d new_p;
