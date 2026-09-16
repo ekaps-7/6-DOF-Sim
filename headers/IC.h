@@ -50,6 +50,8 @@ class StateModel{
         double T_go;
         double theta_cc_mt;
         double psi_cc_mt;
+        double psi_los_dot =0;
+        double theta_los_dot =0;
         Vector3d aero_forces;
         Vector3d aero_moments;
         Vector3d new_p;

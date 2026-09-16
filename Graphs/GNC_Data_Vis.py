@@ -173,13 +173,15 @@ class GUI:
         with open("C:\\Software Development\\6 DOF SIM\\Data\\Collision_Course_data.csv") as csvFile:
             dictReader = csv.DictReader(csvFile)
             listofDicts = list(dictReader)
-        time_lst,tgo_lst,thetacc_lst,psicc_lst = [],[],[],[]
+        time_lst,tgo_lst,thetacc_lst,psicc_lst,theta_los_dot_lst,psi_los_dot_lst = [],[],[],[],[],[]
         for item in listofDicts[:-1000]:
             time_lst.append(float(item['time']))
             tgo_lst.append(float(item['tgo']))
             thetacc_lst.append(float(item['thetacc']))
             psicc_lst.append(float(item['psicc']))
-        Collision_course_geometry(time_lst,tgo_lst,thetacc_lst,psicc_lst)
+            theta_los_dot_lst.append(float(item['theta_los_dot']))
+            psi_los_dot_lst.append(float(item['psi_los_dot']))
+        Collision_course_geometry(time_lst,tgo_lst,thetacc_lst,psicc_lst,theta_los_dot_lst,psi_los_dot_lst)
     
     def create_GUI(self):
         root = Tk()
@@ -713,24 +715,32 @@ def SPSA_graph(iter_lst,cost_lst,t0,t1,t2):
     plt.legend([line1,line2,line3],["Theta 0","Theta 1","Theta 2"])
     plt.show()
 
-def Collision_course_geometry(time_lst,tgo_lst,thetacc_lst,psicc_lst):
+def Collision_course_geometry(time_lst,tgo_lst,thetacc_lst,psicc_lst,theta_los_dot_lst,psi_los_dot_lst):
     time_arr = np.array(time_lst)
     tgo_arr = np.array(tgo_lst)
     thetacc_arr = np.array(thetacc_lst)
     psicc_arr = np.array(psicc_lst)
+    thetalos_arr = np.array(theta_los_dot_lst)
+    psilos_arr = np.array(psi_los_dot_lst)
     fig = plt.figure()
-    ax1 = plt.subplot(311)
+    ax1 = plt.subplot(411)
     ax1.set_title("Collision Course Geometry")
     line1, = plt.plot(time_arr,tgo_arr)
     plt.ylabel("T_go (s)")
     plt.tick_params('x',labelbottom=False)
-    ax2 = plt.subplot(312)
+    ax2 = plt.subplot(412)
     line2, = plt.plot(time_arr,thetacc_arr)
     plt.ylabel("Theta_cc_mt (deg)")
     plt.tick_params('x',labelbottom=False)
-    ax3 = plt.subplot(313)
+    ax3 = plt.subplot(413)
     line1, = plt.plot(time_arr,psicc_arr)
     plt.ylabel("Psi_cc_my (deg)")
+    plt.tick_params('x',labelbottom=False)
+    ax4 = plt.subplot(414)
+    line1, = plt.plot(time_arr,thetalos_arr)
+    line2, = plt.plot(time_arr,psilos_arr)
+    plt.legend([line1,line2],["Theta dot","Psi dot"])
+    plt.ylabel("LOS Velocity")
     plt.xlabel("Time (s)")
     plt.show()
 

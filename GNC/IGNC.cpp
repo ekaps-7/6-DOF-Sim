@@ -820,7 +820,7 @@ class Missile: public Enviornment{
             Vector3d body_rot_vec = Vector3d(0.0,0.0,0.0);
         }
 
-        std::tuple<double,double,double> COLLISION_COURSE_GEOMETRY(VectorXd mv,VectorXd tv,VectorXd rel_pos_vec,double R){
+        std::tuple<double,double,double,double,double> COLLISION_COURSE_GEOMETRY(VectorXd mv,VectorXd tv,VectorXd rel_pos_vec,VectorXd rel_vel_vec,double R){
             double psi_t = atan2(tv(1),tv(0));
             double theta_t = atan2(tv(2),sqrt(tv(0)*tv(0)+tv(1)*tv(1)));
 
@@ -834,9 +834,12 @@ class Missile: public Enviornment{
             double T_go = R/vc_cc_mt;
 
             double theta_cc_mt = asin((vc_cc_mt/mv.norm())*sin(theta_tm)+(tv.norm()/mv.norm())*sin(theta_t));
-            double psi_cc_mt = atan(((vc_cc_mt/mv.norm())*cos(theta_tm)*sin(psi_tm)+(tv.norm()/mv.norm())*cos(theta_t)*sin(psi_t))/((vc_cc_mt/mv.norm())*cos(theta_tm)*cos(psi_tm)+(tv.norm()/mv.norm())*cos(theta_t)*cos(psi_t)));
+            double psi_cc_mt = atan2(((vc_cc_mt/mv.norm())*cos(theta_tm)*sin(psi_tm)+(tv.norm()/mv.norm())*cos(theta_t)*sin(psi_t)),((vc_cc_mt/mv.norm())*cos(theta_tm)*cos(psi_tm)+(tv.norm()/mv.norm())*cos(theta_t)*cos(psi_t)));
+
+            double psi_los_dot = (rel_pos_vec(0)*rel_vel_vec(1)-rel_pos_vec(1)*rel_vel_vec(0))/(rel_pos_vec(0)*rel_pos_vec(0)+rel_pos_vec(1)*rel_pos_vec(1));
+            double theta_los_dot = ((rel_pos_vec(0)*rel_pos_vec(0)+rel_pos_vec(1)*rel_pos_vec(1))*rel_vel_vec(2)-rel_pos_vec(2)*(rel_pos_vec(0)*rel_vel_vec(0)+rel_pos_vec(1)*rel_vel_vec(1)))/(sqrt(rel_pos_vec(0)*rel_pos_vec(0)+rel_pos_vec(1)*rel_pos_vec(1))*(rel_pos_vec(0)*rel_pos_vec(0)+rel_pos_vec(1)*rel_pos_vec(1)+rel_pos_vec(2)*rel_pos_vec(2)));
             
-            return {T_go,theta_cc_mt*(180/3.14159),psi_cc_mt*(180/3.14159)};
+            return {T_go,theta_cc_mt*(180/3.14159),psi_cc_mt*(180/3.14159),theta_los_dot,psi_los_dot};
         }
 
         std::tuple<double,double,double,double,double,double,double,double,double> update_params(Vector3d acc_vec,double delta_t){
@@ -906,7 +909,7 @@ class Simulation: public Enviornment{
             CSV_Writer csv4("C:\\Software Development\\6 DOF SIM\\Data\\Aero_data.csv");
             csv4.write_line("time,CD,CC,CL,Cl,Cm,Cn,X,Y,Z,L,M,N");
             CSV_Writer csv5("C:\\Software Development\\6 DOF SIM\\Data\\Collision_Course_data.csv");
-            csv5.write_line("time,tgo,thetacc,psicc");
+            csv5.write_line("time,tgo,thetacc,psicc,theta_los_dot,psi_los_dot");
 
             std::cout<<"Initializing CSV Files\n"<<std::endl;
 
@@ -966,7 +969,7 @@ class Simulation: public Enviornment{
                 std::tie(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,ekfdata,tekfdata) = missile.SENSORS(missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,target_vel_vec,target_acc_vec,ekf,step,rng,nz,tekf,body_rot_vec);
                 std::tie(R,acc_vec,euler_angles,quat_vec,executed_body_a_vec,body_rot_vec) = missile.INTELLIGENT_INTEGRATED_GUIDANCE_NAVIGATION_AND_CONTROL_SYSTEM(est_m_pos,est_m_vel,est_m_acc,est_t_pos,est_t_vel,est_t_acc,missile_pos_vec,missile_vel_vec,missile_acc_vec,target_pos_vec,body_rot_vec,fid);
                 std::tie(thrust,fuel_mass,defl_angls,aero_forces,aero_moments,new_p,new_v,new_omega,aerodata) = missile.AIRFRAME(missile_pos_vec,missile_vel_vec,executed_body_a_vec,quat_vec,body_rot_vec,tables);
-                std::tie(T_go,theta_cc_mt,psi_cc_mt) = missile.COLLISION_COURSE_GEOMETRY(missile_vel_vec,target_vel_vec,rel_pos_vec,R);
+                std::tie(T_go,theta_cc_mt,psi_cc_mt,theta_los_dot,psi_los_dot) = missile.COLLISION_COURSE_GEOMETRY(missile_vel_vec,target_vel_vec,rel_pos_vec,rel_vel_vec,R);
                 
                 if (fid == TRIM){
                     std::tie(missile.m_ax,missile.m_ay,missile.m_az,missile.m_vx,missile.m_vy,missile.m_vz,missile.m_x,missile.m_y,missile.m_z) = missile.update_params(acc_vec,delta_t);
@@ -1000,7 +1003,7 @@ class Simulation: public Enviornment{
                 csv2.write_line(std::to_string(time)+","+ekfdata);
                 csv3.write_line(std::to_string(time)+","+tekfdata);
                 csv4.write_line(std::to_string(time)+","+aerodata);
-                csv5.write_line(std::to_string(time)+","+std::to_string(T_go)+","+std::to_string(theta_cc_mt)+","+std::to_string(psi_cc_mt));
+                csv5.write_line(std::to_string(time)+","+std::to_string(T_go)+","+std::to_string(theta_cc_mt)+","+std::to_string(psi_cc_mt)+","+std::to_string(theta_los_dot)+","+std::to_string(psi_los_dot));
 
                 if (R <= intercept_radius) {
                     std::cout<<"Engagement Results\n"<<std::endl;
